@@ -1,0 +1,43 @@
+{
+  "name": "NoticiasPro — Noticias de última hora",
+  "short_name": "NoticiasPro",
+  "description": "Tu periódico digital de referencia. Última hora, deportes, fútbol, tecnología, IA, economía y más.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#dc2626",
+  "orientation": "portrait-primary",
+  "categories": ["news", "sports", "technology"],
+  "lang": "es-ES",
+  "icons": [
+    {
+      "src": "/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Última hora",
+      "url": "/general",
+      "description": "Noticias de última hora"
+    },
+    {
+      "name": "Fútbol",
+      "url": "/futbol",
+      "description": "Noticias de fútbol"
+    },
+    {
+      "name": "Tecnología",
+      "url": "/tecnologia",
+      "description": "Noticias de tecnología"
+    }
+  ]
+}

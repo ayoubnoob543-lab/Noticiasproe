@@ -7,11 +7,7 @@ if (!supabaseUrl || !supabaseAnonKey) {
   console.warn('Supabase environment variables are not set. The app will not be able to read from the database.');
 }
 
-export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
-  auth: {
-    persistSession: false,
-  },
-});
+export const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
 export type ArticleRow = {
   id: string;
@@ -138,4 +134,33 @@ export type FetchErrorRow = {
   is_resolved: boolean;
   timestamp: string;
   resolved_at: string | null;
+};
+
+export type ProfileRow = {
+  id: string;
+  email: string;
+  is_admin: boolean;
+  created_at: string;
+};
+
+export type VisitRow = {
+  id: string;
+  user_id: string | null;
+  page_url: string;
+  page_title: string | null;
+  referrer: string | null;
+  user_agent: string | null;
+  ip_address: string | null;
+  country: string | null;
+  city: string | null;
+  visited_at: string;
+};
+
+export type DailyVisitStatsRow = {
+  id: string;
+  date: string;
+  total_visits: number;
+  unique_visitors: number;
+  authenticated_visits: number;
+  anonymous_visits: number;
 };

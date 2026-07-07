@@ -3,7 +3,7 @@
 import * as React from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Search, Menu, X, Sun, Moon, Newspaper, ChevronDown } from 'lucide-react';
+import { Search, Menu, X, Sun, Moon, Newspaper, ChevronDown, LogIn, User, Shield, LogOut, UserPlus } from 'lucide-react';
 import { useTheme } from 'next-themes';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -25,11 +25,13 @@ import {
 import { mainNavCategories, footballCategories, categories } from '@/lib/categories';
 import { cn } from '@/lib/utils';
 import { useRouter } from 'next/navigation';
+import { useAuth } from '@/hooks/use-auth';
 
 export function Header() {
   const pathname = usePathname();
   const router = useRouter();
   const { theme, setTheme } = useTheme();
+  const { user, profile, isAdmin, signOut } = useAuth();
   const [mounted, setMounted] = React.useState(false);
   const [mobileOpen, setMobileOpen] = React.useState(false);
   const [searchQuery, setSearchQuery] = React.useState('');
@@ -42,6 +44,11 @@ export function Header() {
       router.push(`/buscar?q=${encodeURIComponent(searchQuery.trim())}`);
       setSearchQuery('');
     }
+  };
+
+  const handleSignOut = async () => {
+    await signOut();
+    router.push('/');
   };
 
   const isActive = (slug: string) => pathname === `/${slug}` || pathname.startsWith(`/${slug}/`);
@@ -83,6 +90,52 @@ export function Header() {
                   </Link>
                 ))}
               </nav>
+              {/* Mobile auth */}
+              <div className="mt-6 pt-6 border-t border-border">
+                {user ? (
+                  <div className="space-y-2">
+                    <div className="px-3 py-2 text-sm font-medium text-muted-foreground">
+                      {user.email}
+                    </div>
+                    {isAdmin && (
+                      <Link
+                        href="/admin"
+                        onClick={() => setMobileOpen(false)}
+                        className="flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium hover:bg-accent"
+                      >
+                        <Shield className="h-4 w-4" />
+                        Panel Admin
+                      </Link>
+                    )}
+                    <button
+                      onClick={() => { handleSignOut(); setMobileOpen(false); }}
+                      className="w-full flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium hover:bg-accent text-left"
+                    >
+                      <LogOut className="h-4 w-4" />
+                      Cerrar Sesión
+                    </button>
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    <Link
+                      href="/login"
+                      onClick={() => setMobileOpen(false)}
+                      className="flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium hover:bg-accent"
+                    >
+                      <LogIn className="h-4 w-4" />
+                      Iniciar Sesión
+                    </Link>
+                    <Link
+                      href="/login"
+                      onClick={() => setMobileOpen(false)}
+                      className="flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium hover:bg-accent"
+                    >
+                      <UserPlus className="h-4 w-4" />
+                      Registrarse
+                    </Link>
+                  </div>
+                )}
+              </div>
             </SheetContent>
           </Sheet>
 
@@ -220,6 +273,64 @@ export function Header() {
                 <Search className="h-5 w-5" />
               </Link>
             </Button>
+            
+            {/* Auth buttons */}
+            {user ? (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" size="icon" className="rounded-full">
+                    <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center">
+                      <User className="h-4 w-4 text-primary" />
+                    </div>
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-56">
+                  <DropdownMenuLabel>
+                    <div className="flex flex-col space-y-1">
+                      <p className="text-sm font-medium">{profile?.email || user.email}</p>
+                      {isAdmin && (
+                        <p className="text-xs text-primary">Administrador</p>
+                      )}
+                    </div>
+                  </DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+                  {isAdmin && (
+                    <DropdownMenuItem asChild>
+                      <Link href="/admin" className="flex items-center gap-2">
+                        <Shield className="h-4 w-4" />
+                        Panel Admin
+                      </Link>
+                    </DropdownMenuItem>
+                  )}
+                  <DropdownMenuItem asChild>
+                    <Link href="/admin/ajustes" className="flex items-center gap-2">
+                      <User className="h-4 w-4" />
+                      Mi Perfil
+                    </Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={handleSignOut} className="text-destructive focus:text-destructive">
+                    <LogOut className="h-4 w-4 mr-2" />
+                    Cerrar Sesión
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            ) : (
+              <div className="flex items-center gap-1">
+                <Button asChild variant="ghost" size="sm" className="hidden sm:flex">
+                  <Link href="/login">
+                    <LogIn className="h-4 w-4 mr-1" />
+                    Iniciar Sesión
+                  </Link>
+                </Button>
+                <Button asChild size="sm" className="hidden sm:flex">
+                  <Link href="/login">
+                    <UserPlus className="h-4 w-4 mr-1" />
+                    Registrarse
+                  </Link>
+                </Button>
+              </div>
+            )}
           </div>
         </div>
       </div>

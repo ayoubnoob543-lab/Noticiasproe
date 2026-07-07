@@ -7,6 +7,8 @@ import { Footer } from '@/components/layout/footer';
 import { BreakingNewsBar } from '@/components/layout/breaking-news-bar';
 import { CookieConsent } from '@/components/layout/cookie-consent';
 import { Toaster } from '@/components/ui/sonner';
+import { AuthProvider } from '@/hooks/use-auth';
+import { VisitTracker } from '@/components/visit-tracker';
 
 const inter = Inter({
   subsets: ['latin'],
@@ -114,16 +116,19 @@ export default function RootLayout({
   return (
     <html lang="es" suppressHydrationWarning>
       <body className={`${inter.variable} ${merriweather.variable} font-sans antialiased`}>
-        <ThemeProvider attribute="class" defaultTheme="light" enableSystem disableTransitionOnChange>
-          <div className="flex min-h-screen flex-col">
-            <BreakingNewsBar />
-            <Header />
-            <main className="flex-1">{children}</main>
-            <Footer />
-          </div>
-          <CookieConsent />
-          <Toaster />
-        </ThemeProvider>
+        <AuthProvider>
+          <ThemeProvider attribute="class" defaultTheme="light" enableSystem disableTransitionOnChange>
+            <div className="flex min-h-screen flex-col">
+              <BreakingNewsBar />
+              <Header />
+              <main className="flex-1">{children}</main>
+              <Footer />
+            </div>
+            <CookieConsent />
+            <Toaster />
+            <VisitTracker />
+          </ThemeProvider>
+        </AuthProvider>
       </body>
     </html>
   );

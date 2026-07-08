@@ -20,6 +20,7 @@ import {
   Globe,
   Clock,
   Shield,
+  AlertTriangle,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
@@ -43,21 +44,34 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const { user, profile, loading, isAdmin, signOut } = useAuth();
   const { totalStats, trackVisit } = useVisits();
   const [sidebarOpen, setSidebarOpen] = React.useState(false);
+  const [authorized, setAuthorized] = React.useState(false);
+
+  // Admin email from env
+  const adminEmail = process.env.NEXT_PUBLIC_ADMIN_EMAIL || 'ayoubnoob543@gmail.com';
 
   React.useEffect(() => {
-    if (!loading && !user) {
-      router.push('/login');
+    if (!loading) {
+      if (!user) {
+        router.push('/login');
+      } else if (!isAdmin && user.email !== adminEmail) {
+        // Not admin, show access denied
+        setAuthorized(false);
+      } else {
+        setAuthorized(true);
+        if (pathname) {
+          trackVisit(pathname, `Admin - ${pathname}`);
+        }
+      }
     }
-  }, [user, loading, router]);
-
-  React.useEffect(() => {
-    if (user && pathname) {
-      trackVisit(pathname, `Admin - ${pathname}`);
-    }
-  }, [user, pathname, trackVisit]);
+  }, [user, loading, isAdmin, router, pathname, trackVisit, adminEmail]);
 
   const isActive = (href: string) =>
     href === '/admin' ? pathname === '/admin' : pathname.startsWith(href);
+
+  const handleSignOut = async () => {
+    await signOut();
+    router.push('/login');
+  };
 
   if (loading) {
     return (
@@ -72,7 +86,25 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       <div className="min-h-screen flex items-center justify-center bg-muted/30">
         <div className="text-center">
           <Lock className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
-          <p className="text-muted-foreground">Redirigiendo...</p>
+          <p className="text-muted-foreground">Redirigiendo a login...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!authorized && !loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-muted/30">
+        <div className="text-center max-w-md p-8 bg-card rounded-lg shadow-lg border border-border">
+          <AlertTriangle className="h-12 w-12 mx-auto mb-4 text-destructive" />
+          <h2 className="text-xl font-bold mb-2">Acceso Denegado</h2>
+          <p className="text-muted-foreground mb-4">
+            No tienes permisos para acceder a esta sección. 
+            Solo los administradores pueden ver el panel de administración.
+          </p>
+          <Button asChild>
+            <Link href="/">Volver al sitio</Link>
+          </Button>
         </div>
       </div>
     );
@@ -109,7 +141,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                 Ver sitio
               </Link>
             </Button>
-            <Button variant="ghost" size="sm" onClick={signOut}>
+            <Button variant="ghost" size="sm" onClick={handleSignOut}>
               Cerrar sesión
             </Button>
             <div className="flex items-center gap-2">
@@ -118,9 +150,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
               </div>
               <div className="hidden sm:block">
                 <span className="text-sm font-medium">{profile?.email}</span>
-                {isAdmin && (
-                  <BadgeAdmin />
-                )}
+                {isAdmin && <BadgeAdmin />}
               </div>
             </div>
           </div>

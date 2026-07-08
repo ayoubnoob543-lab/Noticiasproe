@@ -1,6 +1,8 @@
 import type { MetadataRoute } from 'next';
 import { getArticles, getCategories, getTeams } from '@/lib/db';
 
+export const runtime = 'nodejs';
+
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const baseUrl = 'https://noticiaspro.com';
   const now = new Date();

@@ -1,11 +1,26 @@
-import { createMiddlewareClient } from '@supabase/auth-helpers-nextjs';
+import { createServerClient } from '@supabase/ssr';
 import { NextResponse, NextRequest } from 'next/server';
 
 export async function middleware(req: NextRequest) {
   const res = NextResponse.next();
   
-  // Create Supabase client
-  const supabase = createMiddlewareClient({ req, res });
+  // Create Supabase client using SSR package
+  const supabase = createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      cookies: {
+        getAll() {
+          return req.cookies.getAll();
+        },
+        setAll(cookiesToSet) {
+          cookiesToSet.forEach(({ name, value, options }) => {
+            res.cookies.set(name, value, options);
+          });
+        },
+      },
+    }
+  );
   
   // Get session
   const { data: { session } } = await supabase.auth.getSession();
@@ -13,7 +28,6 @@ export async function middleware(req: NextRequest) {
   // Check if trying to access admin routes
   const isAdminRoute = req.nextUrl.pathname.startsWith('/admin');
   const isLoginPage = req.nextUrl.pathname === '/login';
-  const isApiRoute = req.nextUrl.pathname.startsWith('/api/');
   
   // Protect admin routes
   if (isAdminRoute) {
@@ -23,9 +37,8 @@ export async function middleware(req: NextRequest) {
       return NextResponse.redirect(redirectUrl);
     }
     
-    // For admin-only access, verify the user is admin
-    // This check is also done client-side, but this adds server-side protection
-    const adminEmail = process.env.ADMIN_EMAIL || 'ayoubnoob543@gmail.com';
+    // Admin email check
+    const adminEmail = process.env.NEXT_PUBLIC_ADMIN_EMAIL || 'ayoubnoob543@gmail.com';
     if (session.user.email !== adminEmail) {
       // Check if user has is_admin in profiles
       const { data: profile } = await supabase
@@ -48,13 +61,6 @@ export async function middleware(req: NextRequest) {
     return NextResponse.redirect(redirectUrl);
   }
   
-  // Rate limiting for API routes
-  if (isApiRoute) {
-    // Add basic rate limiting headers
-    res.headers.set('X-RateLimit-Limit', '100');
-    res.headers.set('X-RateLimit-Remaining', '99');
-  }
-  
   // Add security headers
   res.headers.set('X-Content-Type-Options', 'nosniff');
   res.headers.set('X-Frame-Options', 'DENY');
@@ -69,6 +75,5 @@ export const config = {
   matcher: [
     '/admin/:path*',
     '/login',
-    '/api/:path*',
   ],
 };

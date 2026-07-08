@@ -9,6 +9,11 @@ import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Newspaper, LogIn, UserPlus, Mail, Lock, Loader2, AlertCircle, ArrowLeft, CheckCircle } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
+import { z } from 'zod';
+
+// Validation schemas
+const emailSchema = z.string().email('Email inválido');
+const passwordSchema = z.string().min(6, 'La contraseña debe tener al menos 6 caracteres');
 
 export default function LoginPage() {
   const [mode, setMode] = React.useState<'login' | 'register' | 'forgot'>('login');
@@ -27,21 +32,62 @@ export default function LoginPage() {
     }
   }, [user, router]);
 
+  const validateInput = (): boolean => {
+    setError(null);
+    
+    try {
+      emailSchema.parse(email);
+    } catch {
+      setError('Por favor, introduce un email válido');
+      return false;
+    }
+    
+    if (mode !== 'forgot') {
+      try {
+        passwordSchema.parse(password);
+      } catch (e) {
+        setError(e instanceof z.ZodError ? e.errors[0].message : 'Contraseña inválida');
+        return false;
+      }
+    }
+    
+    if (mode === 'register' && password !== confirmPassword) {
+      setError('Las contraseñas no coinciden');
+      return false;
+    }
+    
+    return true;
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (!validateInput()) return;
+    
+    setLoading(true);
     setError(null);
     setSuccess(null);
-    setLoading(true);
+
+    // Check rate limit
+    const { data: rateLimitOk } = await supabase.rpc('check_rate_limit', { p_email: email });
+    if (rateLimitOk === false) {
+      setError('Demasiados intentos. Por favor, espera 15 minutos.');
+      setLoading(false);
+      return;
+    }
 
     try {
       if (mode === 'login') {
         const { error } = await signIn(email, password);
+        // Log attempt
+        await supabase.rpc('log_login_attempt', { 
+          p_email: email, 
+          p_success: !error 
+        });
+        
         if (error) throw new Error(error);
         router.push('/admin');
       } else if (mode === 'register') {
-        if (password !== confirmPassword) {
-          throw new Error('Las contraseñas no coinciden');
-        }
         const { error } = await signUp(email, password);
         if (error) throw new Error(error);
         setSuccess('Cuenta creada. Revisa tu correo para confirmar.');
@@ -54,7 +100,18 @@ export default function LoginPage() {
         setSuccess('Se ha enviado un correo con instrucciones para recuperar tu contraseña.');
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Ha ocurrido un error');
+      // Sanitize error message
+      const message = err instanceof Error ? err.message : 'Ha ocurrido un error';
+      // Don't expose internal errors
+      if (message.includes('Invalid login credentials')) {
+        setError('Email o contraseña incorrectos');
+      } else if (message.includes('Email not confirmed')) {
+        setError('Por favor, confirma tu email primero');
+      } else if (message.includes('User already registered')) {
+        setError('Este email ya está registrado');
+      } else {
+        setError(message);
+      }
     } finally {
       setLoading(false);
     }
@@ -109,41 +166,44 @@ export default function LoginPage() {
           </CardHeader>
           <CardContent className="space-y-4">
             {error && (
-              <div className="flex items-center gap-2 p-3 rounded-lg bg-destructive/10 text-destructive text-sm">
-                <AlertCircle className="h-4 w-4 flex-shrink-0" />
-                {error}
+              <div className="flex items-center gap-2 p-3 rounded-lg bg-destructive/10 text-destructive text-sm" role="alert">
+                <AlertCircle className="h-4 w-4 flex-shrink-0" aria-hidden="true" />
+                <span>{error}</span>
               </div>
             )}
 
             {success && (
-              <div className="flex items-center gap-2 p-3 rounded-lg bg-green-500/10 text-green-600 dark:text-green-400 text-sm">
-                <CheckCircle className="h-4 w-4 flex-shrink-0" />
-                {success}
+              <div className="flex items-center gap-2 p-3 rounded-lg bg-green-500/10 text-green-600 dark:text-green-400 text-sm" role="status">
+                <CheckCircle className="h-4 w-4 flex-shrink-0" aria-hidden="true" />
+                <span>{success}</span>
               </div>
             )}
 
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="space-y-2">
-                <label className="text-sm font-medium">Correo Electrónico</label>
+                <label htmlFor="email" className="text-sm font-medium">Correo Electrónico</label>
                 <div className="relative">
-                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" aria-hidden="true" />
                   <Input
+                    id="email"
                     type="email"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     placeholder="tu@email.com"
                     className="pl-10"
                     required
+                    autoComplete="email"
                   />
                 </div>
               </div>
 
               {mode !== 'forgot' && (
                 <div className="space-y-2">
-                  <label className="text-sm font-medium">Contraseña</label>
+                  <label htmlFor="password" className="text-sm font-medium">Contraseña</label>
                   <div className="relative">
-                    <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" aria-hidden="true" />
                     <Input
+                      id="password"
                       type="password"
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
@@ -151,6 +211,7 @@ export default function LoginPage() {
                       className="pl-10"
                       required
                       minLength={6}
+                      autoComplete={mode === 'login' ? 'current-password' : 'new-password'}
                     />
                   </div>
                 </div>
@@ -158,10 +219,11 @@ export default function LoginPage() {
 
               {mode === 'register' && (
                 <div className="space-y-2">
-                  <label className="text-sm font-medium">Confirmar Contraseña</label>
+                  <label htmlFor="confirm-password" className="text-sm font-medium">Confirmar Contraseña</label>
                   <div className="relative">
-                    <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" aria-hidden="true" />
                     <Input
+                      id="confirm-password"
                       type="password"
                       value={confirmPassword}
                       onChange={(e) => setConfirmPassword(e.target.value)}
@@ -169,6 +231,7 @@ export default function LoginPage() {
                       className="pl-10"
                       required
                       minLength={6}
+                      autoComplete="new-password"
                     />
                   </div>
                 </div>
@@ -177,7 +240,7 @@ export default function LoginPage() {
               <Button type="submit" className="w-full" disabled={loading}>
                 {loading ? (
                   <>
-                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" aria-hidden="true" />
                     Procesando...
                   </>
                 ) : mode === 'login' ? (
@@ -225,7 +288,7 @@ export default function LoginPage() {
                   onClick={() => { setMode('login'); setError(null); setSuccess(null); }}
                   className="text-sm text-muted-foreground hover:text-primary transition-colors inline-flex items-center gap-1"
                 >
-                  <ArrowLeft className="h-4 w-4" />
+                  <ArrowLeft className="h-4 w-4" aria-hidden="true" />
                   Volver
                 </button>
               </div>
@@ -236,7 +299,7 @@ export default function LoginPage() {
                 href="/"
                 className="text-sm text-muted-foreground hover:text-primary transition-colors inline-flex items-center gap-1"
               >
-                <Newspaper className="h-4 w-4" />
+                <Newspaper className="h-4 w-4" aria-hidden="true" />
                 Volver al sitio
               </Link>
             </div>

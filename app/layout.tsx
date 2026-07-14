@@ -115,6 +115,14 @@ export default function RootLayout({
 }) {
   return (
     <html lang="es" suppressHydrationWarning>
+      <head>
+        <script
+          src="https://quge5.com/88/tag.min.js"
+          data-zone="259676"
+          async
+          data-cfasync="false"
+        />
+      </head>
       <body className={`${inter.variable} ${merriweather.variable} font-sans antialiased`}>
         <AuthProvider>
           <ThemeProvider attribute="class" defaultTheme="light" enableSystem disableTransitionOnChange>

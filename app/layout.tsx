@@ -121,6 +121,12 @@ export default function RootLayout({
           src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-7661325462568451"
           crossOrigin="anonymous"
         />
+        <script
+          async
+          src="https://quge5.com/88/tag.min.js"
+          data-zone="259692"
+          data-cfasync="false"
+        />
       </head>
       <body className={`${inter.variable} ${merriweather.variable} font-sans antialiased`}>
         <AuthProvider>

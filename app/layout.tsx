@@ -96,6 +96,10 @@ export const metadata: Metadata = {
     icon: '/favicon.ico',
     apple: '/icon-192.png',
   },
+  other: {
+    'af867feeed0bf05e6e3dee585dfd594ff28ebf0f': 'af867feeed0bf05e6e3dee585dfd594ff28ebf0f',
+    referrer: 'no-referrer-when-downgrade',
+  },
 };
 
 export const viewport = {

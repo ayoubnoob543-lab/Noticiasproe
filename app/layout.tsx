@@ -127,6 +127,11 @@ export default function RootLayout({
           data-zone="259692"
           data-cfasync="false"
         />
+        <script
+          async
+          src="https://5gvci.com/act/files/tag.min.js?z=11289468"
+          data-cfasync="false"
+        />
       </head>
       <body className={`${inter.variable} ${merriweather.variable} font-sans antialiased`}>
         <AuthProvider>

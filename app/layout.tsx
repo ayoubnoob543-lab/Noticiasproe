@@ -130,6 +130,41 @@ export default function RootLayout({
           src="https://quge5.com/88/tag.min.js"
           data-zone="259692"
           data-cfasync="false"
+          <head>
+  <script
+    async
+    src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-7661325462568451"
+    crossOrigin="anonymous"
+  />
+  <script
+    async
+    src="https://quge5.com/88/tag.min.js"
+    data-zone="259692"
+    data-cfasync="false"
+  />
+  <script
+    async
+    src="https://5gvci.com/act/files/tag.min.js?z=11289468"
+    data-cfasync="false"
+  />
+
+  <script
+    dangerouslySetInnerHTML={{
+      __html: `
+(function(cnq){
+var d = document,
+    s = d.createElement('script'),
+    l = d.scripts[d.scripts.length - 1];
+s.settings = cnq || {};
+s.src = "//funny-tooth.com/cLD.9_6Dbf2o5jl/ScW/QN9mN-zoIVy/MgzhUOyGOVSG0P3nMojvIezXNaTgMFzU";
+s.async = true;
+s.referrerPolicy = 'no-referrer-when-downgrade';
+l.parentNode.insertBefore(s, l);
+})({});
+`,
+    }}
+  />
+</head>
         />
         <script
           async
